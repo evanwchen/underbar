@@ -7,6 +7,7 @@
   // seem very useful, but remember it--if a function needs to provide an
   // iterator when the user does not pass one in, this will be handy.
   _.identity = function(val) {
+    return val;
   };
 
   /**
@@ -37,6 +38,12 @@
   // Like first, but for the last elements. If n is undefined, return just the
   // last element.
   _.last = function(array, n) {
+    if (n === undefined) { return array[array.length-1]; }
+    else if (n > array.length) {
+      return array.slice(0, array.length);
+    } else {
+      return array.slice(array.length-n, array.length);
+    }
   };
 
   // Call iterator(value, key, collection) for each element of collection.
@@ -45,6 +52,17 @@
   // Note: _.each does not have a return value, but rather simply runs the
   // iterator function over each item in the input collection.
   _.each = function(collection, iterator) {
+    if (Array.isArray(collection)) {
+      for (var i = 0; i < collection.length; i++) {
+        iterator(collection[i], i, collection);
+      }
+    } else if (Object.prototype.toString.call(collection) === "[object Object]") {
+      for (var prop in collection) {
+        if (collection.hasOwnProperty(prop)) {
+          iterator(collection[prop], prop, collection);
+        }
+      }
+    }
   };
 
   // Returns the index at which value can be found in the array, or -1 if value
@@ -66,16 +84,43 @@
 
   // Return all elements of an array that pass a truth test.
   _.filter = function(collection, test) {
+    var list = [];
+    if (Array.isArray(collection)) {
+      for (var i = 0; i < collection.length; i++) {
+        if (test(collection[i])) {
+          list.push(collection[i]);
+        }
+      }
+    }
+    return list;
   };
 
   // Return all elements of an array that don't pass a truth test.
   _.reject = function(collection, test) {
     // TIP: see if you can re-use _.filter() here, without simply
     // copying code in and modifying it
+    var list = [];
+    if (Array.isArray(collection)) {
+      _.filter(collection, function(value) {
+        if (test(value) == false) {
+          list.push(value);
+        }
+      });
+    }
+    return list;
   };
 
   // Produce a duplicate-free version of the array.
   _.uniq = function(array) {
+    var list = [];
+    if (Array.isArray(array)) {
+      _.each(array, function(value, key, collection) {
+        if (_.indexOf(list, value) == -1) { 
+          list.push(value); 
+        }
+      });
+    }
+    return list;
   };
 
 
@@ -84,6 +129,13 @@
     // map() is a useful primitive iteration function that works a lot
     // like each(), but in addition to running the operation on all
     // the members, it also maintains an array of results.
+    var list = [];
+    if (Array.isArray(collection) || Object.prototype.toString.call(collection)) {
+      _.each(collection, function(value) {
+        list.push(iterator(value));
+      });
+    }
+    return list;
   };
 
   /*
@@ -92,7 +144,7 @@
    * as an example of this.
    */
 
-  // Takes an array of objects and returns and array of the values of
+  // Takes an array of objects and returns an array of the values of
   // a certain property in it. E.g. take an array of people and return
   // an array of just their ages
   _.pluck = function(collection, key) {
@@ -125,6 +177,25 @@
   //   }); // should be 5, regardless of the iterator function passed in
   //          No accumulator is given so the first element is used.
   _.reduce = function(collection, iterator, accumulator) {
+    var current, isStartValue = false;
+    if (accumulator == undefined) {
+      _.each(collection, function(value) {
+        if (!isStartValue) {
+          current = value;
+          isStartValue = true;
+        }
+        else {
+          current = iterator(current, value);
+        }
+      });
+    }
+    else if (arguments.length === 3) {
+      current = accumulator;
+      _.each(collection, function(value) {
+        current = iterator(current, value);
+      });
+    }
+    return current;
   };
 
   // Determine if the array or object contains a given value (using `===`).
